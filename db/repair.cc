@@ -340,6 +340,10 @@ class Repairer {
       counter++;
     }
     delete iter;
+#ifdef OS_WINDOWS
+    // Remove the table from cache.
+    table_cache_->Evict(t.meta.number);
+#endif
 
     ArchiveFile(src);
     if (counter == 0) {

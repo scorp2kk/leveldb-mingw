@@ -61,9 +61,15 @@ class CorruptionTest {
     ASSERT_OK(TryReopen());
   }
 
+  void Close() {
+  	if (db_ != NULL) {
+      delete db_;
+      db_ = NULL;
+    }
+  }
+
   void RepairDB() {
-    delete db_;
-    db_ = NULL;
+    Close();
     ASSERT_OK(::leveldb::RepairDB(dbname_, options_));
   }
 
@@ -202,6 +208,7 @@ class CorruptionTest {
 TEST(CorruptionTest, Recovery) {
   Build(100);
   Check(100, 100);
+  Close();
   Corrupt(kLogFile, 19, 1);      // WriteBatch tag for first record
   Corrupt(kLogFile, log::kBlockSize + 1000, 1);  // Somewhere in second block
   Reopen();
@@ -254,6 +261,7 @@ TEST(CorruptionTest, TableFileRepair) {
   dbi->TEST_CompactRange(0, NULL, NULL);
   dbi->TEST_CompactRange(1, NULL, NULL);
 
+  Close();
   Corrupt(kTableFile, 100, 1);
   RepairDB();
   Reopen();
@@ -265,6 +273,7 @@ TEST(CorruptionTest, TableFileIndexData) {
   DBImpl* dbi = reinterpret_cast<DBImpl*>(db_);
   dbi->TEST_CompactMemTable();
 
+  Close();
   Corrupt(kTableFile, -2000, 500);
   Reopen();
   Check(5000, 9999);
@@ -304,6 +313,7 @@ TEST(CorruptionTest, CorruptedDescriptor) {
   dbi->TEST_CompactMemTable();
   dbi->TEST_CompactRange(0, NULL, NULL);
 
+  Close();
   Corrupt(kDescriptorFile, 0, 1000);
   Status s = TryReopen();
   ASSERT_TRUE(!s.ok());
